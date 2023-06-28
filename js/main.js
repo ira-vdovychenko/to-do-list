@@ -4,6 +4,35 @@ const taskInput = document.querySelector('#taskInput');
 const tasksList = document.querySelector('#tasksList');
 const emptyList = document.querySelector('#emptyList');
 
+//для збереження даних
+let tasks = [];
+
+if (localStorage.getItem('tasks')) {
+    tasks = JSON.parse(localStorage.getItem('tasks'));
+}
+
+tasks.forEach(function (task) {
+    //формуємо сss клас для span 
+    const cssClass = task.done ? 'task-title task-title--done' : 'task-title';
+
+    //формуємо розмітку для нового завдання
+    const taskHTML = `
+                <li id="${task.id}" class="list-group-item d-flex justify-content-between task-item">
+					<span class="${cssClass}">${task.text}</span>
+					<div class="task-item__buttons">
+						<button type="button" data-action="done" class="btn-action">
+							<img src="./img/tick.svg" alt="Done" width="18" height="18">
+						</button>
+						<button type="button" data-action="delete" class="btn-action">
+							<img src="./img/cross.svg" alt="Done" width="18" height="18">
+						</button>
+					</div>
+				</li>`;
+    //додаємо завдання на сторінку тег ul
+    tasksList.insertAdjacentHTML('beforeend', taskHTML);
+})
+
+
 //додаємо завдання
 form.addEventListener('submit', addTask);
 
@@ -13,9 +42,6 @@ tasksList.addEventListener('click', deleteTask);
 //відмічаємо виконане завдання
 tasksList.addEventListener('click', doneTask);
 
-//для збереження даних
-let tasks = [];
-checkEmptyList();
 
 //ф-ція для додавання завдання
 function addTask(event) {
@@ -33,7 +59,10 @@ function addTask(event) {
     };
     
     //додаємо задачу в масив з задачами
-    tasks.push(newTask)
+    tasks.push(newTask);
+
+    //збегіраємо список завдань в сховище LS
+    saveToLocalStorage();
 
     //формуємо сss клас для span 
     const cssClass = newTask.done ? 'task-title task-title--done' : 'task-title';
@@ -74,7 +103,10 @@ function deleteTask(event) {
     //видаляємо завдання через фільтрацію масиву
     //дослівно: перебираємо усі task, якщо task.id !== тому id який хочемо видалити - true - запише завдання в масив 
     //стрілочна ф-ція, return підставляється
-    tasks = tasks.filter((task) => task.id !== id)
+    tasks = tasks.filter((task) => task.id !== id);
+
+    //збегіраємо список завдань в сховище LS
+    saveToLocalStorage();
 
     //видаляємо завдання з розмітки
     parentNode.remove();
@@ -107,6 +139,9 @@ function doneTask(event) {
     //змінюємо статус done(true/false) в масиві newTask, який записується в масив tasks
     task.done = !task.done
 
+    //збегіраємо список завдань в сховище LS
+    saveToLocalStorage();
+
     const taskTitle = parentNode.querySelector('.task-title');
     taskTitle.classList.toggle('task-title--done');
     //перевіряємо що клік був по кнопці <button type="button" data-action="done"
@@ -134,4 +169,9 @@ function checkEmptyList() {
         const emptyListEl = document.querySelector('#emptyList');
         emptyListEl ? emptyListEl.remove() : null;
     }
+}
+
+//ф-ція зберігання в LS
+function saveToLocalStorage() {
+    localStorage.setItem('tasks', JSON.stringify(tasks))
 }
