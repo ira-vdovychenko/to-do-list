@@ -13,6 +13,10 @@ tasksList.addEventListener('click', deleteTask);
 //відмічаємо виконане завдання
 tasksList.addEventListener('click', doneTask);
 
+//для збереження даних
+let tasks = [];
+checkEmptyList();
+
 //ф-ція для додавання завдання
 function addTask(event) {
     //відміна стандартної поведінки браузера
@@ -21,10 +25,23 @@ function addTask(event) {
     //дістаємо текст завдання з інпута
     const taskText = taskInput.value;
 
+    //описуємо задачу в виді обєкту
+    const newTask = {
+        id: Date.now(), //в id буде записуватись поточна дата в мілісекундах
+        text: taskText, 
+        done: false,
+    };
+    
+    //додаємо задачу в масив з задачами
+    tasks.push(newTask)
+
+    //формуємо сss клас для span 
+    const cssClass = newTask.done ? 'task-title task-title--done' : 'task-title';
+
     //формуємо розмітку для нового завдання
     const taskHTML = `
-                <li class="list-group-item d-flex justify-content-between task-item">
-					<span class="task-title">${taskText}</span>
+                <li id="${newTask.id}" class="list-group-item d-flex justify-content-between task-item">
+					<span class="${cssClass}">${newTask.text}</span>
 					<div class="task-item__buttons">
 						<button type="button" data-action="done" class="btn-action">
 							<img src="./img/tick.svg" alt="Done" width="18" height="18">
@@ -39,34 +56,82 @@ function addTask(event) {
 
     //очищуємо інпут, додаємо фокус на нього
     taskInput.value = ''
-    taskInput.focus()
+    taskInput.focus();
 
-    //приховуємо emptyList (список справ пустий) якщо є завдання
-    if (tasksList.children.length > 1) {
-        emptyList.classList.add('none')
-    }
+    checkEmptyList();
 }
 
 //ф-ція для видалення завдання
-function deleteTask(event) {
-    //перевіряємо, що клік був по кнопці button type="button" data-action="delete"
+function deleteTask(event) { 
+    //оптимізували: якщо клік НЕ по кнопці delete - код зупиняється
+    if (event.target.dataset.action !== 'delete') retutn;
+    //інакше:
+    const parentNode = event.target.closest('.list-group-item');
+
+    //опреділяємо id завдання
+    const id = Number(parentNode.id);
+
+    //видаляємо завдання через фільтрацію масиву
+    //дослівно: перебираємо усі task, якщо task.id !== тому id який хочемо видалити - true - запише завдання в масив 
+    //стрілочна ф-ція, return підставляється
+    tasks = tasks.filter((task) => task.id !== id)
+
+    //видаляємо завдання з розмітки
+    parentNode.remove();
+
+    checkEmptyList();
+
+    
+    /* //перевіряємо, що клік був по кнопці button type="button" data-action="delete"
     if (event.target.dataset.action === 'delete') {
         //closest - шукає найближчий батьківський елемент
         const parentNode = event.target.closest('.list-group-item');
         parentNode.remove()
     }
-    //показуємо emptyList (список справ пустий) якщо в списку завдань 1 елемент
+    //показуємо emptyList (список справ пустий) якщо в списку завдань 1 елемент 
     if (tasksList.children.length === 1) {
         emptyList.classList.remove('none')
-    }
+    } */
 }
 
 //ф-ція виконаного завдання
 function doneTask(event) {
+    //оптимізували: якщо клік був НЕ по кнопці done
+    if (event.target.dataset.action !== 'done') return;
+    //інакше:
+    const parentNode = event.target.closest('.list-group-item');
+
+    //опреділяємо id завдання
+    const id = Number(parentNode.id);
+    const task = tasks.find((task) => task.id === id);
+    //змінюємо статус done(true/false) в масиві newTask, який записується в масив tasks
+    task.done = !task.done
+
+    const taskTitle = parentNode.querySelector('.task-title');
+    taskTitle.classList.toggle('task-title--done');
     //перевіряємо що клік був по кнопці <button type="button" data-action="done"
-    if (event.target.dataset.action === 'done') {
+    /* if (event.target.dataset.action === 'done') {
         const parentNode = event.target.closest('.list-group-item');
         const taskTitle = parentNode.querySelector('.task-title');
         taskTitle.classList.toggle('task-title--done');
+    } */
+}
+
+//ф-ція показу emptylist
+function checkEmptyList() {
+    //якщо масив tasks пустий - вставляємо emptylist
+    if (tasks.length === 0) {
+        const emptyListHTML = `
+                <li id="emptyList" class="list-group-item empty-list">
+					<img src="./img/leaf.svg" alt="Empty" width="48" class="mt-3">
+					<div class="empty-list__title">Task list is empty</div>
+				</li>
+                `
+        tasksList.insertAdjacentHTML('afterbegin', emptyListHTML);
+    }
+
+    if (tasks.length > 0) {
+        const emptyListEl = document.querySelector('#emptyList');
+        emptyListEl ? emptyListEl.remove() : null;
     }
 }
